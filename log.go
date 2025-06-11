@@ -54,26 +54,36 @@ var SetLevel = LOG.SetLevel
 var SetLogLevel = LOG.SetLogLevel
 var SetTimeFormat = LOG.SetTimeFormat
 
+var defaultStyles *log.Styles
+
 func init() {
 	os.Setenv("TERM", "xterm-256color")
 
-	styles := log.DefaultStyles()
-	styles.Levels[CRITICAL] = lipgloss.NewStyle().
+	defaultStyles = log.DefaultStyles()
+	defaultStyles.Levels[CRITICAL] = lipgloss.NewStyle().
 		SetString("CRITICAL").
 		Bold(true).
 		MaxWidth(4).
 		Foreground(lipgloss.Color("201"))
-	styles.Levels[NOTICE] = lipgloss.NewStyle().
+	defaultStyles.Levels[NOTICE] = lipgloss.NewStyle().
 		SetString("NOTICE").
 		Bold(true).
 		MaxWidth(4).
 		Foreground(lipgloss.Color("40"))
 
-	styles.Keys["err"] = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
-	styles.Values["err"] = lipgloss.NewStyle().Bold(true)
+	defaultStyles.Keys["err"] = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
+	defaultStyles.Values["err"] = lipgloss.NewStyle().Bold(true)
 
-	LOG.SetStyles(styles)
+	LOG.SetStyles(defaultStyles)
 	LOG.SetTimeFormat("15:04:05")
+}
+
+func (l *Logger) DefaultStyles() *log.Styles {
+	return defaultStyles
+}
+
+func (l *Logger) SetStyles(styles *log.Styles) {
+	l.Logger.SetStyles(styles)
 }
 
 func (l *Logger) SetTimeFormat(format string) {

@@ -2,13 +2,20 @@ package log
 
 import (
 	"testing"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestLog(t *testing.T) {
 	LOG.SetLogLevel("debug")
 
+	styles := LOG.DefaultStyles()
+	styles.Keys["test"] = lipgloss.NewStyle().Foreground(lipgloss.Color("114"))
+	styles.Values["test"] = lipgloss.NewStyle().Bold(true)
+	LOG.SetStyles(styles)
+
 	LOG.Debug("Debug message")
-	LOG.Info("Info message")
+	LOG.Info("Info message", "test", 500)
 	LOG.Notice("notice message")
 	LOG.Warn("Warn message")
 	LOG.Error("Error message")
