@@ -1,6 +1,7 @@
 package log
 
 import (
+	"io"
 	"os"
 	"strings"
 
@@ -55,9 +56,11 @@ var SetLogLevel = LOG.SetLogLevel
 var SetTimeFormat = LOG.SetTimeFormat
 
 var defaultStyles *log.Styles
+var file *os.File
 
 func init() {
 	os.Setenv("TERM", "xterm-256color")
+	os.Setenv("CLICOLOR_FORCE", "1")
 
 	defaultStyles = log.DefaultStyles()
 	defaultStyles.Levels[CRITICAL] = lipgloss.NewStyle().
@@ -76,6 +79,29 @@ func init() {
 
 	LOG.SetStyles(defaultStyles)
 	LOG.SetTimeFormat("15:04:05")
+}
+
+func (l *Logger) SetLogFile(fname string) {
+	if fname == "" {
+		return
+	}
+
+	var err error
+	file, err = os.OpenFile(fname, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		l.Fatalf("Failed to open log file '%s': %v", fname, err)
+	}
+
+	l.SetOutput(io.MultiWriter(file, os.Stdout))
+}
+
+func (l *Logger) CloseLogFile() {
+	if file != nil {
+		if err := file.Close(); err != nil {
+			l.Errorf("Failed to close log file: %v", err)
+		}
+		file = nil
+	}
 }
 
 func (l *Logger) DefaultStyles() *log.Styles {

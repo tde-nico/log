@@ -9,6 +9,9 @@ import (
 func TestLog(t *testing.T) {
 	LOG.SetLogLevel("debug")
 
+	LOG.SetLogFile("test.log")
+	defer LOG.CloseLogFile()
+
 	styles := LOG.DefaultStyles()
 	styles.Keys["test"] = lipgloss.NewStyle().Foreground(lipgloss.Color("114"))
 	styles.Values["test"] = lipgloss.NewStyle().Bold(true)
@@ -26,7 +29,7 @@ func TestLog(t *testing.T) {
 	sub.SetTimeFormat("2006-01-02 15:04:05")
 
 	sub.Debug("Debug message")
-	sub.Info("Info message")
+	sub.Info("Info message", "test", 500)
 	sub.Notice("notice message")
 	sub.Warn("Warn message")
 	sub.Error("Error message")
