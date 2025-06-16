@@ -7,24 +7,24 @@ import (
 )
 
 func TestLog(t *testing.T) {
-	LOG.SetLogLevel("debug")
+	SetLogLevel("debug")
 
-	styles := LOG.DefaultStyles()
+	styles := DefaultStyles()
 	styles.Keys["test"] = lipgloss.NewStyle().Foreground(lipgloss.Color("114"))
 	styles.Values["test"] = lipgloss.NewStyle().Bold(true)
-	LOG.SetStyles(styles)
+	SetStyles(styles)
 
-	LOG.Debug("Debug message")
-	LOG.Info("Info message", "test", 500)
-	LOG.Notice("notice message")
-	LOG.Warn("Warn message")
-	LOG.Error("Error message")
-	LOG.Critical("Critical message")
+	SetLogFile("test.log")
+	defer CloseLogFile()
 
-	LOG.SetLogFile("test.log")
-	defer LOG.CloseLogFile()
+	Debug("Debug message")
+	Info("Info message", "test", 500)
+	Notice("notice message")
+	Warn("Warn message")
+	Error("Error message")
+	Critical("Critical message")
 
-	sub := LOG.WithPrefix("sub")
+	sub := WithPrefix("sub")
 	sub.SetLevel(InfoLevel)
 	sub.SetTimeFormat("2006-01-02 15:04:05")
 
@@ -34,4 +34,5 @@ func TestLog(t *testing.T) {
 	sub.Warn("Warn message")
 	sub.Error("Error message")
 	sub.Critical("Critical message")
+	sub.Fatal("Death message")
 }
