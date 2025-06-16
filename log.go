@@ -54,6 +54,10 @@ var SetPrefix = LOG.SetPrefix
 var SetLevel = LOG.SetLevel
 var SetLogLevel = LOG.SetLogLevel
 var SetTimeFormat = LOG.SetTimeFormat
+var SetStyles = LOG.SetStyles
+var DefaultStyles = LOG.DefaultStyles
+var CloseLogFile = LOG.CloseLogFile
+var SetLogFile = LOG.SetLogFile
 
 var defaultStyles *log.Styles
 var file *os.File
@@ -89,7 +93,7 @@ func (l *Logger) SetLogFile(fname string) {
 	var err error
 	file, err = os.OpenFile(fname, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		l.Fatalf("Failed to open log file '%s': %v", fname, err)
+		l.Errorf("Failed to open log file '%s': %v", fname, err)
 	}
 
 	l.SetOutput(io.MultiWriter(file, os.Stdout))
@@ -134,7 +138,8 @@ func (l *Logger) SetLogLevel(level string) {
 	default:
 		lvl, err = log.ParseLevel(level)
 		if err != nil {
-			l.Fatalf("Invalid log level '%s': %v", level, err)
+			l.Errorf("Invalid log level '%s': %v", level, err)
+			return
 		}
 	}
 	l.SetLevel(lvl)

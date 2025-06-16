@@ -9,9 +9,6 @@ import (
 func TestLog(t *testing.T) {
 	LOG.SetLogLevel("debug")
 
-	LOG.SetLogFile("test.log")
-	defer LOG.CloseLogFile()
-
 	styles := LOG.DefaultStyles()
 	styles.Keys["test"] = lipgloss.NewStyle().Foreground(lipgloss.Color("114"))
 	styles.Values["test"] = lipgloss.NewStyle().Bold(true)
@@ -23,6 +20,9 @@ func TestLog(t *testing.T) {
 	LOG.Warn("Warn message")
 	LOG.Error("Error message")
 	LOG.Critical("Critical message")
+
+	LOG.SetLogFile("test.log")
+	defer LOG.CloseLogFile()
 
 	sub := LOG.WithPrefix("sub")
 	sub.SetLevel(InfoLevel)
