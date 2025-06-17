@@ -156,10 +156,18 @@ func (l *Logger) SetLogLevel(level string) {
 }
 
 func (l *Logger) With(keyvals ...interface{}) *Logger {
-	return &Logger{l.Logger.With(keyvals...), l.fileLogger.With(keyvals...), nil}
+	if l.fileLogger != nil {
+		return &Logger{l.Logger.With(keyvals...), l.fileLogger.With(keyvals...), nil}
+	} else {
+		return &Logger{l.Logger.With(keyvals...), nil, nil}
+	}
 }
 func (l *Logger) WithPrefix(prefix string) *Logger {
-	return &Logger{l.Logger.WithPrefix(prefix), l.fileLogger.WithPrefix(prefix), nil}
+	if l.fileLogger != nil {
+		return &Logger{l.Logger.WithPrefix(prefix), l.fileLogger.WithPrefix(prefix), nil}
+	} else {
+		return &Logger{l.Logger.WithPrefix(prefix), nil, nil}
+	}
 }
 
 func (l *Logger) SetPrefix(prefix string) {
