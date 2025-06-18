@@ -25,9 +25,11 @@ func TestLog(t *testing.T) {
 	Critical("Critical message")
 
 	sub := WithPrefix("sub")
-	sub.SetLevel(InfoLevel)
+	SetLevel(InfoLevel)
 	sub.SetTimeFormat("2006-01-02 15:04:05")
 
+	Debug("Debug message")
+	Info("Info message", "test", 500)
 	sub.Debug("Debug message")
 	sub.Info("Info message", "test", 500)
 	sub.Notice("notice message")

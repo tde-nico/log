@@ -10,9 +10,10 @@ import (
 )
 
 type Logger struct {
-	Logger     *log.Logger
+	logger     *log.Logger
 	fileLogger *log.Logger
 	file       *os.File
+	children   []*Logger
 }
 
 const NOTICE = log.Level(2)
@@ -26,7 +27,7 @@ const NoticeLevel = NOTICE
 const InfoLevel = log.InfoLevel
 const DebugLevel = log.DebugLevel
 
-var LOG *Logger = &Logger{log.Default(), nil, nil}
+var LOG *Logger = &Logger{log.Default(), nil, nil, []*Logger{}}
 
 var Fatal = LOG.Fatal
 var Fatalf = LOG.Fatalf
@@ -43,11 +44,11 @@ var Infof = LOG.Infof
 var Debug = LOG.Debug
 var Debugf = LOG.Debugf
 
-var GetLevel = LOG.Logger.GetLevel
 var With = LOG.With
 var WithPrefix = LOG.WithPrefix
-var GetPrefix = LOG.Logger.GetPrefix
+var GetPrefix = LOG.GetPrefix
 var SetPrefix = LOG.SetPrefix
+var GetLevel = LOG.GetLevel
 var SetLevel = LOG.SetLevel
 var SetLogLevel = LOG.SetLogLevel
 var SetTimeFormat = LOG.SetTimeFormat
@@ -102,7 +103,7 @@ func (l *Logger) CloseLogFile() {
 	if l.file != nil {
 		l.fileLogger = nil
 		if err := l.file.Close(); err != nil {
-			l.Logger.Errorf("Failed to close log file: %v", err)
+			l.logger.Errorf("Failed to close log file: %v", err)
 		}
 		l.file = nil
 	}
@@ -113,25 +114,32 @@ func (l *Logger) DefaultStyles() *log.Styles {
 }
 
 func (l *Logger) SetStyles(styles *log.Styles) {
-	l.Logger.SetStyles(styles)
+	l.logger.SetStyles(styles)
 	if l.fileLogger != nil {
 		l.fileLogger.SetStyles(styles)
 	}
 }
 
 func (l *Logger) SetTimeFormat(format string) {
-	l.Logger.SetTimeFormat(format)
+	l.logger.SetTimeFormat(format)
 	if l.fileLogger != nil {
 		l.fileLogger.SetTimeFormat(format)
 	}
 }
 
+func (l *Logger) GetLevel() log.Level {
+	return l.logger.GetLevel()
+}
+
 func (l *Logger) SetLevel(lvl log.Level) {
-	l.Logger.SetLevel(lvl)
-	l.Logger.SetReportCaller(lvl <= DebugLevel)
+	l.logger.SetLevel(lvl)
+	l.logger.SetReportCaller(lvl <= DebugLevel)
 	if l.fileLogger != nil {
 		l.fileLogger.SetLevel(lvl)
 		l.fileLogger.SetReportCaller(lvl <= DebugLevel)
+	}
+	for _, child := range l.children {
+		child.SetLevel(lvl)
 	}
 }
 
@@ -156,22 +164,33 @@ func (l *Logger) SetLogLevel(level string) {
 }
 
 func (l *Logger) With(keyvals ...interface{}) *Logger {
+	var child *Logger
 	if l.fileLogger != nil {
-		return &Logger{l.Logger.With(keyvals...), l.fileLogger.With(keyvals...), nil}
+		child = &Logger{l.logger.With(keyvals...), l.fileLogger.With(keyvals...), nil, []*Logger{}}
 	} else {
-		return &Logger{l.Logger.With(keyvals...), nil, nil}
+		child = &Logger{l.logger.With(keyvals...), nil, nil, []*Logger{}}
 	}
+	l.children = append(l.children, child)
+	return child
 }
+
 func (l *Logger) WithPrefix(prefix string) *Logger {
+	var child *Logger
 	if l.fileLogger != nil {
-		return &Logger{l.Logger.WithPrefix(prefix), l.fileLogger.WithPrefix(prefix), nil}
+		child = &Logger{l.logger.WithPrefix(prefix), l.fileLogger.WithPrefix(prefix), nil, []*Logger{}}
 	} else {
-		return &Logger{l.Logger.WithPrefix(prefix), nil, nil}
+		child = &Logger{l.logger.WithPrefix(prefix), nil, nil, []*Logger{}}
 	}
+	l.children = append(l.children, child)
+	return child
+}
+
+func (l *Logger) GetPrefix() string {
+	return l.logger.GetPrefix()
 }
 
 func (l *Logger) SetPrefix(prefix string) {
-	l.Logger.SetPrefix(prefix)
+	l.logger.SetPrefix(prefix)
 	if l.fileLogger != nil {
 		l.fileLogger.SetPrefix(prefix)
 	}
@@ -182,8 +201,8 @@ func (l *Logger) Debug(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(DebugLevel, msg, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(DebugLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(DebugLevel, msg, keyvals...)
 }
 
 func (l *Logger) Debugf(format string, keyvals ...interface{}) {
@@ -191,8 +210,8 @@ func (l *Logger) Debugf(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(DebugLevel, format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(DebugLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(DebugLevel, format, keyvals...)
 }
 
 func (l *Logger) Info(msg interface{}, keyvals ...interface{}) {
@@ -200,8 +219,8 @@ func (l *Logger) Info(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(InfoLevel, msg, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(InfoLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(InfoLevel, msg, keyvals...)
 }
 
 func (l *Logger) Infof(format string, keyvals ...interface{}) {
@@ -209,8 +228,8 @@ func (l *Logger) Infof(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(InfoLevel, format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(InfoLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(InfoLevel, format, keyvals...)
 }
 
 func (l *Logger) Notice(msg interface{}, keyvals ...interface{}) {
@@ -218,8 +237,8 @@ func (l *Logger) Notice(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(NoticeLevel, msg, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(NoticeLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(NoticeLevel, msg, keyvals...)
 }
 
 func (l *Logger) Noticef(format string, keyvals ...interface{}) {
@@ -227,8 +246,8 @@ func (l *Logger) Noticef(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(NoticeLevel, format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(NoticeLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(NoticeLevel, format, keyvals...)
 }
 
 func (l *Logger) Warn(msg interface{}, keyvals ...interface{}) {
@@ -236,8 +255,8 @@ func (l *Logger) Warn(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(WarnLevel, msg, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(WarnLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(WarnLevel, msg, keyvals...)
 }
 
 func (l *Logger) Warnf(format string, keyvals ...interface{}) {
@@ -245,8 +264,8 @@ func (l *Logger) Warnf(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(WarnLevel, format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(WarnLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(WarnLevel, format, keyvals...)
 }
 
 func (l *Logger) Error(msg interface{}, keyvals ...interface{}) {
@@ -254,8 +273,8 @@ func (l *Logger) Error(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(ErrorLevel, msg, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(ErrorLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(ErrorLevel, msg, keyvals...)
 }
 
 func (l *Logger) Errorf(format string, keyvals ...interface{}) {
@@ -263,8 +282,8 @@ func (l *Logger) Errorf(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(ErrorLevel, format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(ErrorLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(ErrorLevel, format, keyvals...)
 }
 
 func (l *Logger) Critical(msg interface{}, keyvals ...interface{}) {
@@ -272,8 +291,8 @@ func (l *Logger) Critical(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(CriticalLevel, msg, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(CriticalLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(CriticalLevel, msg, keyvals...)
 }
 
 func (l *Logger) Criticalf(format string, keyvals ...interface{}) {
@@ -281,8 +300,8 @@ func (l *Logger) Criticalf(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(CriticalLevel, format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(CriticalLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(CriticalLevel, format, keyvals...)
 }
 
 func (l *Logger) Fatal(msg interface{}, keyvals ...interface{}) {
@@ -290,8 +309,8 @@ func (l *Logger) Fatal(msg interface{}, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Log(CriticalLevel, "FATAL: "+fmt.Sprint(msg), keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Log(FatalLevel, msg, keyvals...)
+	l.logger.Helper()
+	l.logger.Log(FatalLevel, msg, keyvals...)
 }
 
 func (l *Logger) Fatalf(format string, keyvals ...interface{}) {
@@ -299,6 +318,6 @@ func (l *Logger) Fatalf(format string, keyvals ...interface{}) {
 		l.fileLogger.Helper()
 		l.fileLogger.Logf(CriticalLevel, "FATAL: "+format, keyvals...)
 	}
-	l.Logger.Helper()
-	l.Logger.Logf(FatalLevel, format, keyvals...)
+	l.logger.Helper()
+	l.logger.Logf(FatalLevel, format, keyvals...)
 }
