@@ -9,13 +9,13 @@ import (
 func TestLog(t *testing.T) {
 	SetLogLevel("debug")
 
+	SetLogFile("test.log")
+	defer CloseLogFile()
+
 	styles := DefaultStyles()
 	styles.Keys["test"] = lipgloss.NewStyle().Foreground(lipgloss.Color("114"))
 	styles.Values["test"] = lipgloss.NewStyle().Bold(true)
 	SetStyles(styles)
-
-	SetLogFile("test.log")
-	defer CloseLogFile()
 
 	Debug("Debug message")
 	Info("Info message", "test", 500)

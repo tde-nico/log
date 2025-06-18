@@ -97,15 +97,27 @@ func (l *Logger) SetLogFile(fname string) {
 	l.file = file
 	l.fileLogger = log.With()
 	l.fileLogger.SetOutput(file)
+
+	l.propagateFileLogger()
 }
 
 func (l *Logger) CloseLogFile() {
 	if l.file != nil {
 		l.fileLogger = nil
+		l.propagateFileLogger()
 		if err := l.file.Close(); err != nil {
 			l.logger.Errorf("Failed to close log file: %v", err)
 		}
 		l.file = nil
+	}
+}
+
+func (l *Logger) propagateFileLogger() {
+	for _, child := range l.children {
+		if child.fileLogger == nil {
+			child.fileLogger = l.fileLogger.WithPrefix(child.GetPrefix())
+			child.propagateFileLogger()
+		}
 	}
 }
 
