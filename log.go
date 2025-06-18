@@ -118,12 +118,18 @@ func (l *Logger) SetStyles(styles *log.Styles) {
 	if l.fileLogger != nil {
 		l.fileLogger.SetStyles(styles)
 	}
+	for _, child := range l.children {
+		child.SetStyles(styles)
+	}
 }
 
 func (l *Logger) SetTimeFormat(format string) {
 	l.logger.SetTimeFormat(format)
 	if l.fileLogger != nil {
 		l.fileLogger.SetTimeFormat(format)
+	}
+	for _, child := range l.children {
+		child.SetTimeFormat(format)
 	}
 }
 
