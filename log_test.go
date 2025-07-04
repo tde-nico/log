@@ -17,12 +17,12 @@ func TestLog(t *testing.T) {
 	styles.Values["test"] = lipgloss.NewStyle().Bold(true)
 	SetStyles(styles)
 
-	Debug("Debug message")
-	Info("Info message", "test", 500)
-	Notice("notice message")
-	Warn("Warn message")
-	Error("Error message")
-	Critical("Critical message")
+	Debug("Debug message", "debug", 100)
+	Info("Info message", "info", 200)
+	Notice("notice message", "notice", 300)
+	Warn("Warn message", "warn", 400)
+	Error("Error message", "err", 500)
+	Critical("Critical message", "crit", 600)
 
 	sub := WithPrefix("sub")
 	SetLevel(InfoLevel)
@@ -36,5 +36,5 @@ func TestLog(t *testing.T) {
 	sub.Warn("Warn message")
 	sub.Error("Error message")
 	sub.Critical("Critical message")
-	sub.Fatal("Death message")
+	sub.Fatal("Death message", "fatal", 700)
 }

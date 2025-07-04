@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -75,8 +74,20 @@ func init() {
 		MaxWidth(4).
 		Foreground(lipgloss.Color("40"))
 
+	defaultStyles.Keys["debug"] = lipgloss.NewStyle().Foreground(lipgloss.Color("63"))
+	defaultStyles.Values["debug"] = lipgloss.NewStyle().Bold(true)
+	defaultStyles.Keys["info"] = lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
+	defaultStyles.Values["info"] = lipgloss.NewStyle().Bold(true)
+	defaultStyles.Keys["notice"] = lipgloss.NewStyle().Foreground(lipgloss.Color("40"))
+	defaultStyles.Values["notice"] = lipgloss.NewStyle().Bold(true)
+	defaultStyles.Keys["warn"] = lipgloss.NewStyle().Foreground(lipgloss.Color("192"))
+	defaultStyles.Values["warn"] = lipgloss.NewStyle().Bold(true)
 	defaultStyles.Keys["err"] = lipgloss.NewStyle().Foreground(lipgloss.Color("204"))
 	defaultStyles.Values["err"] = lipgloss.NewStyle().Bold(true)
+	defaultStyles.Keys["crit"] = lipgloss.NewStyle().Foreground(lipgloss.Color("201"))
+	defaultStyles.Values["crit"] = lipgloss.NewStyle().Bold(true)
+	defaultStyles.Keys["fatal"] = lipgloss.NewStyle().Foreground(lipgloss.Color("134"))
+	defaultStyles.Values["fatal"] = lipgloss.NewStyle().Bold(true)
 
 	LOG.SetStyles(defaultStyles)
 	LOG.SetTimeFormat("15:04:05")
@@ -325,17 +336,19 @@ func (l *Logger) Criticalf(format string, keyvals ...interface{}) {
 func (l *Logger) Fatal(msg interface{}, keyvals ...interface{}) {
 	if l.fileLogger != nil {
 		l.fileLogger.Helper()
-		l.fileLogger.Log(CriticalLevel, "FATAL: "+fmt.Sprint(msg), keyvals...)
+		l.fileLogger.Log(FatalLevel, msg, keyvals...)
 	}
 	l.logger.Helper()
 	l.logger.Log(FatalLevel, msg, keyvals...)
+	os.Exit(1)
 }
 
 func (l *Logger) Fatalf(format string, keyvals ...interface{}) {
 	if l.fileLogger != nil {
 		l.fileLogger.Helper()
-		l.fileLogger.Logf(CriticalLevel, "FATAL: "+format, keyvals...)
+		l.fileLogger.Logf(FatalLevel, format, keyvals...)
 	}
 	l.logger.Helper()
 	l.logger.Logf(FatalLevel, format, keyvals...)
+	os.Exit(1)
 }
